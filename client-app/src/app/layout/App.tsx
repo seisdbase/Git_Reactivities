@@ -1,9 +1,11 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, SyntheticEvent } from 'react';
 import {  Container } from 'semantic-ui-react';
-import axios from 'axios';
+// import axios from 'axios';
 import { IActivity } from '../models/activity';
 import { ActivityDashboard }  from '../../features/activities/dashboard/ActivityDashboard';
 import  NavBar from '../../features/nav/NavBar';
+import agent from '../api/agent';
+import LoadingComponent from './LoadingComponent';
 
 
 const App = () => {
@@ -11,13 +13,24 @@ const App = () => {
    const [activities, setActivities] = useState<IActivity[]>([]);
    const [selectedActivity, setSelectedActivity] = useState<IActivity | null>(null);
 
-   const handleSelectActivity = (id: string) => {
-      setSelectedActivity(activities.filter(a => a.id === id)[0])
-      setEditMode(false);
-   }
-
+  
    //Edit mode handler
    const [editMode, setEditMode] = useState(false);
+
+   //Loading Component
+   const [loading, setLoading] = useState(true);
+
+   //Submitting componeent for buttons
+   const [submitting, setSubmitting] = useState(false);
+
+   //Delete button Loading indicator --> '' represtns target button name
+   const [target, setTarget] = useState('');
+
+   const handleSelectActivity = (id: string) => {
+    setSelectedActivity(activities.filter(a => a.id === id)[0])
+    setEditMode(false);
+ }
+
 
    //Create Handler
   const handleOpenCreateForm = () => {
@@ -27,41 +40,52 @@ const App = () => {
 
   //Create Activity handler
   const handleCreateActivity = (activity: IActivity) => {
-    setActivities([...activities, activity])
-    setSelectedActivity(activity);
-    setEditMode(false);
- }
+    setSubmitting(true);
+    //Create resource on server, wait for acknowledgement that it happened
+    agent.Activities.create(activity).then(() => {
+    //Then process changes on client side  
+      setActivities([...activities, activity])
+      setSelectedActivity(activity);
+      setEditMode(false);
+    }).then(() => setSubmitting(false))
+  }
 
  //Edit Activity handler
  const handleEditActivity = (activity: IActivity) => {
+  setSubmitting(true);
+  agent.Activities.update(activity).then(() => {  
   setActivities([...activities.filter(a => a.id !== activity.id), activity])
   setSelectedActivity(activity);
   setEditMode(false);
+  }).then(() => setSubmitting(false))
 }
 
 //Delete handler
-const handleDeleteActivity = (id: string) => {
+const handleDeleteActivity = (event: SyntheticEvent<HTMLButtonElement>, id: string) => {
+  setSubmitting(true);
+  setTarget(event.currentTarget.name)
+  agent.Activities.delete(id).then(() => {  
   setActivities([...activities.filter(a => a.id !== id)])
+  }).then(() => setSubmitting(false))
 }
-
-
   
-   useEffect(() => {
-     axios
-     .get<IActivity[]>('http://localhost:5000/api/activities')
-     .then(response => {
-       let activities:IActivity[] = [];
+//Hooks
+  useEffect(() => {
+    agent.Activities.list()
+      .then(response => {
+        let activities: IActivity[] = [];
         //Lookp thru activities and update date format
-        response.data.forEach(activity => {
-            activity.date = activity.date.split('.')[0];
-            activities.push(activity);
+        response.forEach((activity) => {
+          activity.date = activity.date.split('.')[0];
+          activities.push(activity);
         })
+        setActivities(response)
+      }).then(() => setLoading(false));
+  }, []);
 
-       setActivities(response.data)
-       });
-     }, []);
+     if(loading) return <LoadingComponent content='Loading activities' />
 
-    //Pass things to Dashboard - temporary solution for small app - will use Mobx for state mgmt 
+    //Pass things to Dashboard/Form - temporary solution for small app - will use Mobx for state mgmt 
     return (
       <Fragment>
         <NavBar openCreateForm={handleOpenCreateForm} />
@@ -76,6 +100,8 @@ const handleDeleteActivity = (id: string) => {
                          createActivity={handleCreateActivity}
                          editActivity={handleEditActivity}
                          deleteActivity={handleDeleteActivity}
+                         submitting={submitting}
+                         target={target}
           />
         </Container>
       </Fragment>

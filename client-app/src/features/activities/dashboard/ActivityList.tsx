@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { SyntheticEvent } from 'react'
 import { Item, Button, Label, Segment } from 'semantic-ui-react'
 import { IActivity } from '../../../app/models/activity'
 
@@ -6,13 +6,18 @@ import { IActivity } from '../../../app/models/activity'
 interface IProps{
     activities: IActivity[];
     selectActivity: (id: string) => void; 
-    deleteActivity:(id:string) => void;
+    deleteActivity:(event: SyntheticEvent<HTMLButtonElement>, id:string) => void;
+    submitting: boolean;
+    target: string;
 }
 
 export const ActivityList: React.FC<IProps> = ({ 
+    //destructired props
     activities,
     selectActivity,
-    deleteActivity 
+    deleteActivity,
+    submitting,
+    target
 }) => {
     return (
         <Segment clearing>
@@ -30,14 +35,19 @@ export const ActivityList: React.FC<IProps> = ({
                                 <Button onClick={() => selectActivity(activity.id)} 
                                                       floated='right' 
                                                       content='View' 
-                                                      color='blue' />
+                                                      color='blue' 
+                                                      />
                                                       
                                 <Label basic content={activity.category} />
 
-                                <Button onClick={() => deleteActivity(activity.id)} 
-                                                      floated='right' 
-                                                      content='Delete' 
-                                                      color='red' />
+                                <Button 
+                                    name={activity.id}
+                                    loading={target === activity.id && submitting}
+                                    onClick={(event) => deleteActivity(event, activity.id)}
+                                    floated='right'
+                                    content='Delete'
+                                    color='red'
+                                />
                                                       
                                 <Label basic content={activity.category} />
                             </Item.Extra>
