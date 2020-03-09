@@ -6,10 +6,15 @@ using Domain;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
+//ActivitiesController is very thin and 'dumb' 
+//Passes requests to Handlers via MediatR.Send
+
 namespace API.Controllers
 {
     [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
     [ApiController]
+
+    //ControllerBase since our controller only used as an API, React is used for Views
     public class ActivitiesController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -24,7 +29,7 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<List<Activity>>> List()
         {
-            return await _mediator.Send(new List.Query());
+            return await _mediator.Send(new List.Query());  //List.Query is the Command Handler in List.cs
 
         }
 
