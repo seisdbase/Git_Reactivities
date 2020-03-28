@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Application.Activities;
 using Domain;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 //ActivitiesController is very thin and 'dumb' 
@@ -11,32 +12,23 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
-    [ApiController]
-
+  
     //ControllerBase since our controller only used as an API, React is used for Views
-    public class ActivitiesController : ControllerBase
+    public class ActivitiesController : BaseController
     {
-        private readonly IMediator _mediator;
-        
-        //Constructor for dependence injection
-        public ActivitiesController(IMediator mediator)
-        {
-            this._mediator = mediator;
-
-        }
-
+       
         [HttpGet]
         public async Task<ActionResult<List<Activity>>> List()
         {
-            return await _mediator.Send(new List.Query());  //List.Query is the Command Handler in List.cs
+            return await Mediator.Send(new List.Query());  //List.Query is the Command Handler in List.cs
 
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<Activity>> Details(Guid id)
         {
-            return await _mediator.Send(new Details.Query{Id = id});
+            return await Mediator.Send(new Details.Query{Id = id});
 
         }
 
@@ -45,7 +37,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Unit>> Create(Create.Command command)
         {
-            return await _mediator.Send(command);
+            return await Mediator.Send(command);
 
         }
 
@@ -55,7 +47,7 @@ namespace API.Controllers
         {
 
             command.Id = id;
-            return await _mediator.Send(command);
+            return await Mediator.Send(command);
 
         }
 
@@ -63,7 +55,7 @@ namespace API.Controllers
         public async Task<ActionResult<Unit>> Delete(Guid id)
         {
 
-            return await _mediator.Send(new Delete.Command{Id = id});
+            return await Mediator.Send(new Delete.Command{Id = id});
 
         }
 

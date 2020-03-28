@@ -3,8 +3,19 @@ import axios, { AxiosResponse } from 'axios';
 import { IActivity } from '../models/activity';
 import { history } from '../..';
 import { toast } from 'react-toastify';
+import { IUser, IUserFormValues } from '../models/user';
 
 axios.defaults.baseURL= 'http://localhost:5000/api';
+
+//check JWT token exists, attach to athorization header
+axios.interceptors.request.use((config) =>  {
+    const token = window.localStorage.getItem('jwt');
+    if(token) config.headers.Authorization = `Bearer ${token}`;
+      return config
+}, error => {
+ return Promise.reject(error);
+})
+
 
 //Interceptor for request/response from server--------------------------------------
 axios.interceptors.response.use(undefined, error => {
@@ -24,16 +35,15 @@ axios.interceptors.response.use(undefined, error => {
    if(status === 500){
        toast.error('Server error - check the terminal for more info');
    }
-   throw error;
+   throw error.response;
 })
 //----------------------------------------------------------------------------------
 
 const responseBody = (response: AxiosResponse) => response.data;
 
-//Currying function
+//Slowing down function
 const sleep = (ms: number) => (response: AxiosResponse) =>
    new Promise<AxiosResponse>(resolve => setTimeout(() => resolve(response), ms));
-
 
 const requests = {
     get:(url: string) => axios.get(url).then(sleep(1000)).then(responseBody),
@@ -50,6 +60,13 @@ const Activities = {
     delete: (id:string) => requests.del(`/activities/${id}`)
 }
 
+const User = {
+    current: (): Promise<IUser> => requests.get(`/user`),
+    login: (user: IUserFormValues) :  Promise<IUser> => requests.post(`/user/login`, user),
+    register: (user: IUserFormValues) :  Promise<IUser> => requests.post(`/user/register`, user),
+}
+
 export default {
-    Activities
+    Activities,
+    User
 }
