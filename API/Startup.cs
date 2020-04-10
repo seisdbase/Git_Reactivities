@@ -19,6 +19,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using AutoMapper;
 
 namespace API
 {
@@ -37,6 +38,7 @@ namespace API
         {
             services.AddDbContext<DataContext>(opt => 
             {
+              opt.UseLazyLoadingProxies();
               opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
             });
 
@@ -54,6 +56,9 @@ namespace API
             
             //--MediatR is message hub; gives a reference where our handlers are located
             services.AddMediatR(typeof(List.Handler).Assembly);
+
+            //AutoMapper
+            services.AddAutoMapper(typeof(List.Handler));
             
             //services.AddMvc was replaced by AddControllers 
             services.AddControllers( opt =>
@@ -72,6 +77,18 @@ namespace API
                         var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
                         identityBuilder.AddEntityFrameworkStores<DataContext>();
                         identityBuilder.AddSignInManager<SignInManager<AppUser>>();
+
+                        //Auth policy see IsHostRequirements.cs
+                        services.AddAuthorization(opt =>
+                        {
+                            opt.AddPolicy("IsActivityHost", policy =>
+                            {
+                                policy.Requirements.Add(new IsHostRequirement());
+                            });
+                        });
+
+                        //Authorization handler
+                        services.AddTransient<IAuthorizationHandler, IsHostRequirementHandler>();
                         
                         //Token generator
                         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
