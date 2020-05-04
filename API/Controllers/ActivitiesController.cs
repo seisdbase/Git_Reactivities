@@ -15,7 +15,6 @@ namespace API.Controllers
     //ControllerBase since our controller only used as an API, React is used for Views
     public class ActivitiesController : BaseController
     {
-       
         [HttpGet]
         public async Task<ActionResult<List<ActivityDto>>> List()
         {
@@ -53,7 +52,7 @@ namespace API.Controllers
             return await Mediator.Send(new Delete.Command{Id = id});
         }
 
-      [HttpPost("{id}/attend")]
+        [HttpPost("{id}/attend")]
         public async Task<ActionResult<Unit>> Attend(Guid id)
         { 
             return await Mediator.Send(new Attend.Command{Id=id});

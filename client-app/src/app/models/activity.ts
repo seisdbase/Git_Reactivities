@@ -6,6 +6,10 @@ export interface IActivity{
     date: Date;
     city: string;
     venue: string;
+    //These pertain to currently locked user
+    isGoing: boolean;
+    isHost: boolean;
+    attendees : IAttendee []
 }
 
 //Partial makes properties optional
@@ -31,5 +35,12 @@ export class ActivityFormValues implements IActivityFormValues {
         //Assign to 'this' hence class, source is: init; init props automatically mapped into class
         Object.assign(this, init);
     }
-
 }
+    export interface IAttendee {
+        username: string;
+        displayName: string;
+        image: string;
+        isHost: boolean;
+    }
+
+    

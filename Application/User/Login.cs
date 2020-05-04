@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,14 +46,14 @@ namespace Application.User
                            SignInManager<AppUser> signInManager,
                            IJwtGenerator jwtGenerator)
             {
-                this._jwtGenerator = jwtGenerator;
-                this._signInManager = signInManager;
-                this._userManager = userManager;
+                _jwtGenerator = jwtGenerator;
+                _signInManager = signInManager;
+                _userManager = userManager;
 
             }
 
             public async Task<User> Handle(Query request,
-            CancellationToken cancellationToken)
+                                            CancellationToken cancellationToken)
             {
                 var user = await _userManager.FindByEmailAsync(request.Email);
 
@@ -65,13 +66,12 @@ namespace Application.User
 
                 if (result.Succeeded)
                 {
-                    //TODO: generate token
                     return new User
                     {
                         DisplayName = user.DisplayName,
                         Token = _jwtGenerator.CreateToken(user),
                         Username = user.UserName,
-                        Image = null
+                        Image = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
                     };
                 }
 

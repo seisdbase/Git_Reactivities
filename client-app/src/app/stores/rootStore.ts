@@ -21,5 +21,4 @@ export class RootStore{
         this.modalStore = new ModalStore(this);
     }
 }
-
 export const RootStoreContext = createContext(new RootStore());

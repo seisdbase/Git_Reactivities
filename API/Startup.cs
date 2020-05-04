@@ -17,9 +17,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using System.Net;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using AutoMapper;
+using Infrastructure.Photos;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Routing;
+using System;
+using Microsoft.AspNetCore.Http;
 
 namespace API
 {
@@ -97,6 +101,13 @@ namespace API
                         //Service for retrieving username from token
                         services.AddScoped<IUserAccessor, UserAccessor>();
 
+                        //Service for cloudinary photos
+                        services.AddScoped<IPhotoAccessor, PhotoAccessor>();
+
+
+                        //Service for Cloudinary.com eg "Cloudinary:CloudName" "dp23kepfs"
+                        services.Configure<CloudinarySettings>(Configuration.GetSection("Cloudinary"));
+
                         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                           .AddJwtBearer(opt =>
                           {
@@ -129,14 +140,49 @@ namespace API
             //Ordering of these matters; this allows [Authorize] attribute to be used inside controllers
             //so that endpoints are protected
             app.UseRouting();
+                      
             app.UseCors("CorsPolicy"); 
 
             app.UseAuthentication();
+
+            app.Use((context, next) =>
+                {
+                    var endpointFeature = context.Features[typeof(IEndpointFeature)] as IEndpointFeature;
+                    var endpoint = endpointFeature?.Endpoint;
+
+                    //note: endpoint will be null, if there was no
+                    //route match found for the request by the endpoint route resolver middleware
+                    if (endpoint != null)
+                    {
+                        var routePattern = (endpoint as RouteEndpoint)?.RoutePattern
+                                                                    ?.RawText;
+
+                        Console.WriteLine("ENDPOINT NAME: " + endpoint.DisplayName);
+                        Console.WriteLine("----------------------------------------------------" );
+                        Console.WriteLine($"ROUTE PATTERN: {routePattern}");
+                        Console.WriteLine("----------------------------------------------------" );
+                      //  Console.WriteLine("METADATA TYPES: " + string.Join(", ", endpoint.Metadata));
+                    }
+                    return next();
+                });
+
+
+            
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
+                 //orig code
+                // endpoints.MapControllers();
+
+                //new code route map configuration
                 endpoints.MapControllers();
+
+                //route map I added to show Authorization setup
+                endpoints.MapGet("/secret", context =>
+                {
+                    return context.Response.WriteAsync("secret");
+                }).RequireAuthorization(new AuthorizeAttribute() { Roles = "admin" });
             });
         }
     }
