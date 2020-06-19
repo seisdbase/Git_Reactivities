@@ -1,3 +1,5 @@
+//Closing and opening of modal forms 
+
 import { RootStore } from "./rootStore";
 import { observable, action } from "mobx";
 

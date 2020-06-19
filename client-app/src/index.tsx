@@ -17,7 +17,6 @@ export const history = createBrowserHistory();
  //pass history as property
  //App.tsx 
 ReactDOM.render(
-     
     <Router history = {history}>   
         <ScrollToTop>
             <App />                  

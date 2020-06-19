@@ -39,8 +39,7 @@ namespace Application.Activities
 
                 //LAZY LOADING
 
-                var activity = await _context.Activities
-                    .FindAsync(request.Id);
+                var activity = await _context.Activities.FindAsync(request.Id);
 
                 if (activity == null)
                     throw new RestException(System.Net.HttpStatusCode.NotFound,

@@ -31,156 +31,150 @@ interface DetailParams {
 }
 
 const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
-    match,               //RouteComponentProps
-    history
-}) => { 
-    
+  match,               
+  history
+}) => {
+
     const rootStore = useContext(RootStoreContext);
     //Get these from activityStore
-    const { submitting, 
-           loadActivity,
-           createActivity,
-           editActivity,
-          } = rootStore.activityStore;
+    const { submitting,
+            loadActivity,
+            createActivity,
+            editActivity,
+    } = rootStore.activityStore;
 
-    //useState is a HOOK to init the form
+    //useState is a hook to make our form stateful
     //useState returns a pair: activity is current value; setActivity is function
     const [activity, setActivity] = useState(new ActivityFormValues());
 
-    //Loading indicator
+    //Loading indicator, set loading to false
     const [loading, setLoading] = useState(false);
 
-
+    //The Effect Hook lets you perform side effects in function components
+    //By using this Hook, you tell React that your component needs to do something after render.
     //Careful useEffect hook runs every time component is loaded     
     //useEffect = 3 lifecycles = componentDidMount + componentDidUnmount + componentWillUnmount
-    //it will  only run on change of loadActivity + match.params.id
-  useEffect(() => {
-    if (match.params.id) {
-      setLoading(true);
-      loadActivity(match.params.id).then(
-        //returns activityStore activity from @action loadActivity = async (id: string) => {
-        (activity) => setActivity(new ActivityFormValues(activity)))
-        .finally(() => setLoading(false));
-    }
-    //remember we need to clean up the dependencies - just one --> [] otherwise as below
-  }, [
-    loadActivity,
-    match.params.id
-  ]);
    
-     //submit for Final Form
-    const handleFinalFormSubmit  = (values:any) => {
-        const dateAndTime = combineDateAndTime(values.date, values.time);
-        //Emit properties from object using spread operator
-        const{date, time, ...activity} = values;
-        activity.date = dateAndTime;
-        if (!activity.id) {
-            let newActivity = {             //generating newActivity on the client hence have id
-                ...activity,
-                id: uuid()
-            };
-            //createActivity comes from activityStore.cs
-            createActivity(newActivity);
-        } else {
-            editActivity(activity);
-        }
+    useEffect(() => {
+      if (match.params.id) {
+        setLoading(true);
+         //returns  @action loadActivity from activityStore
+        loadActivity(match.params.id).then(
+          (activity) => setActivity(new ActivityFormValues(activity)))
+          .finally(() => setLoading(false));
+      }
+    }, 
+    //remember we need to clean up the dependencies
+    //it will  only run on change of loadActivity + match.params.id
+    [
+      loadActivity,
+      match.params.id
+    ]);
+
+    //submit for Final Form
+    const handleFinalFormSubmit = (values: any) => {
+      const dateAndTime = combineDateAndTime(values.date, values.time);
+      //Emit properties from object using spread operator
+      const { date, time, ...activity } = values;
+      activity.date = dateAndTime;
+      //generating newActivity on the client hence have id
+      if (!activity.id) {
+        let newActivity = {
+          ...activity,
+          id: uuid()
+        };
+        //both in: activityStore.cs
+        createActivity(newActivity);
+      } else {
+        editActivity(activity);
+      }
     }
 
     return (
-        <Grid>
-            <Grid.Column width={10}>
-              {/* need clearing d/t buttons so we strick loading indicator on the form*/}
-            <Segment clearing>
-              <FinalForm 
+      <Grid>
+        <Grid.Column width={10}>
+          {/* need clearing d/t buttons so we strick loading indicator on the form*/}
+          <Segment clearing>
+            <FinalForm
               validate={validate}
               initialValues={activity}
-                onSubmit={handleFinalFormSubmit}
-                //destructure handleSubmit for the rendering
-                render={({handleSubmit, invalid, pristine}) => (
-                    <Form onSubmit={handleSubmit} loading={loading}>
-                    <Field 
-                       name='title' 
-                       placeholder='Title' 
-                       value={activity.title} 
-                       component={TextInput}
-                   
-                    />
+              onSubmit={handleFinalFormSubmit}
+              //destructure handleSubmit for the rendering
+              render={({ handleSubmit, invalid, pristine }) => (
+                <Form onSubmit={handleSubmit} loading={loading}>
+                  <Field
+                    name='title'
+                    placeholder='Title'
+                    value={activity.title}
+                    component={TextInput}
+
+                  />
+                  <Field
+                    name='description'
+                    placeholder='Description'
+                    rows={3}
+                    value={activity.description}
+                    component={TextAreaInput}
+                  />
+                  <Field
+                    component={SelectInput}
+                    options={category}
+                    name='category'
+                    placeholder='Category'
+                    value={activity.category}
+                  />
+                  <Form.Group widths='equal'>
                     <Field
-                        name='description' 
-                        placeholder='Description'
-                        rows={3}
-                        value={activity.description}
-                        component={TextAreaInput}
+                      component={DateInput}
+                      name='date'
+                      date={true}
+                      placeholder='Date'
+                      value={activity.date}
                     />
-                    <Field 
-                       component={SelectInput}
-                       options={category}
-                       name='category' 
-                       placeholder='Category' 
-                       value={activity.category} 
-                    />
-                    <Form.Group widths='equal'>
-                      <Field
-                        component={DateInput}
-                        name='date'
-                        date={true}
-                        placeholder='Date'
-                        value={activity.date}
-                      />
 
-                      <Field
-                        component={DateInput}
-                        name='time'
-                        time={true}
-                        placeholder='Date'
-                        value={activity.date}
-                      />
-                    </Form.Group>
-                  
-                     <Field
-                       component={TextInput}
-                       name='venue' 
-                       placeholder='Venue' 
-                       value={activity.venue} 
+                    <Field
+                      component={DateInput}
+                      name='time'
+                      time={true}
+                      placeholder='Date'
+                      value={activity.date}
                     />
-                     <Field
-                       component={TextInput}
-                       name='city' 
-                       placeholder='City' 
-                       value={activity.city} 
-                    />
-    
-                    <Button
-                      loading={submitting} 
-                      disabled={loading|| invalid || pristine}
-                      floated='right'
-                      positive type='submit'
-                      content='Submit' />
-    
-                    <Button 
-                      onClick={activity.id 
-                        ? () => history.push(`/activities/${activity.id}`) 
-                        : () =>  history.push('/activities')}
-                      disabled={loading}
+                  </Form.Group>
 
-                      floated='right'
-                      type='button'
-                      content='Cancel' />
-    
+                  <Field
+                    component={TextInput}
+                    name='venue'
+                    placeholder='Venue'
+                    value={activity.venue}
+                  />
+                  <Field
+                    component={TextInput}
+                    name='city'
+                    placeholder='City'
+                    value={activity.city}
+                  />
+                  <Button
+                    loading={submitting}
+                    disabled={loading || invalid || pristine}
+                    floated='right'
+                    positive type='submit'
+                    content='Submit' />
+                  <Button
+                    onClick={activity.id
+                      ? () => history.push(`/activities/${activity.id}`)
+                      : () => history.push('/activities')}
+                    disabled={loading}
+
+                    floated='right'
+                    type='button'
+                    content='Cancel' />
                 </Form>
-
-
-                )}
-
-
-              /> 
-            
-        </Segment>
-            
-            </Grid.Column>
-        </Grid>
-       
-    )
+              )}
+            />
+          </Segment>
+        </Grid.Column>
+      </Grid>
+  )
 }
 
 //this watches over changes in activityStore

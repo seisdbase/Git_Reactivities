@@ -24,6 +24,10 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using System;
 using Microsoft.AspNetCore.Http;
+using API.SignalR;
+using System.Threading.Tasks;
+using Application.Profiles;
+//using API.SignalR;
 
 namespace API
 {
@@ -32,14 +36,16 @@ namespace API
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+             Console.WriteLine("IN STARTUP.CS BEGINNING ----------------------------------------------------" );
         }
 
         public IConfiguration Configuration { get; }
 
-         //SERVICES CONTAINER
+         //SERVICES DEPNEDENCY INJECTION CONTAINER
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+             Console.WriteLine("IN STARTUP.CS ConfigureServices ----------------------------------------------------" );
             services.AddDbContext<DataContext>(opt => 
             {
               opt.UseLazyLoadingProxies();
@@ -53,7 +59,7 @@ namespace API
                 {
                     policy.AllowAnyHeader().AllowAnyMethod().WithOrigins(
                         "http://localhost:3000"
-                    );
+                    ).AllowCredentials();   //this was the fix for CORS error 
                 });
                             
             });
@@ -63,8 +69,13 @@ namespace API
 
             //AutoMapper
             services.AddAutoMapper(typeof(List.Handler));
+
+           //SignalR
+           services.AddSignalR();
+
             
             //services.AddMvc was replaced by AddControllers 
+            //Authoriztion policy --> every request must be authorized
             services.AddControllers( opt =>
                 {
                     var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
@@ -95,7 +106,8 @@ namespace API
                         services.AddTransient<IAuthorizationHandler, IsHostRequirementHandler>();
                         
                         //Token generator
-                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
+                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes
+                                                    (Configuration["TokenKey"]));
                         services.AddScoped<IJwtGenerator, JwtGenerator>();
 
                         //Service for retrieving username from token
@@ -104,6 +116,8 @@ namespace API
                         //Service for cloudinary photos
                         services.AddScoped<IPhotoAccessor, PhotoAccessor>();
 
+                        //Service for injecting profile reader
+                        services.AddScoped<IProfileReader, ProfileReader>();
 
                         //Service for Cloudinary.com eg "Cloudinary:CloudName" "dp23kepfs"
                         services.Configure<CloudinarySettings>(Configuration.GetSection("Cloudinary"));
@@ -118,6 +132,23 @@ namespace API
                                   ValidateAudience = false,       //url where its coming from
                                   ValidateIssuer = false
                               };
+
+                              //Get token for SignalR --> server side
+                              opt.Events = new JwtBearerEvents
+                              {
+                                  OnMessageReceived = context =>
+                                  {
+                                      var accessToken = context.Request.Query["access_token"];
+                                      var path = context.HttpContext.Request.Path;
+                                      if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/chat")))
+                                      {
+                                          context.Token = accessToken;
+                                      }
+
+                                      return Task.CompletedTask;
+                                  }
+                              };
+
                           });
                     });
         }
@@ -125,6 +156,8 @@ namespace API
          // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+             Console.WriteLine("IN STARTUP.CS Configure ----------------------------------------------------" );
+
 
             app.UseMiddleware<ErrorHandlingMiddleware>();
 
@@ -154,14 +187,15 @@ namespace API
                     //route match found for the request by the endpoint route resolver middleware
                     if (endpoint != null)
                     {
-                        var routePattern = (endpoint as RouteEndpoint)?.RoutePattern
-                                                                    ?.RawText;
-
+                        var routePattern = (endpoint as RouteEndpoint)?.RoutePattern?.RawText;
+                        
+                        Console.WriteLine("----------------------------------------------------" );                                             
+                        Console.WriteLine("IN STARTUP.CS app.Use ----------------------------------------------------" );
                         Console.WriteLine("ENDPOINT NAME: " + endpoint.DisplayName);
                         Console.WriteLine("----------------------------------------------------" );
                         Console.WriteLine($"ROUTE PATTERN: {routePattern}");
                         Console.WriteLine("----------------------------------------------------" );
-                      //  Console.WriteLine("METADATA TYPES: " + string.Join(", ", endpoint.Metadata));
+                      // Console.WriteLine("METADATA TYPES: " + string.Join(", ", endpoint.Metadata));
                     }
                     return next();
                 });
@@ -183,6 +217,10 @@ namespace API
                 {
                     return context.Response.WriteAsync("secret");
                 }).RequireAuthorization(new AuthorizeAttribute() { Roles = "admin" });
+
+                //There are nowwhere  routes to redirect SignalR, must add them, SR gonna act as endpoint
+                endpoints.MapHub<ChatHub>("/chat");
+
             });
         }
     }

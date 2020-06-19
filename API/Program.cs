@@ -14,7 +14,6 @@ namespace API
         public static void Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
-            // CreateHostBuilder(args).Build().Run();
 
             using(var scope = host.Services.CreateScope())
             {

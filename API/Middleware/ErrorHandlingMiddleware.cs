@@ -20,6 +20,7 @@ namespace API.Middleware
 
         public async Task Invoke(HttpContext context)
         {
+             Console.WriteLine("IN ErrorHandlingMiddleware.cs ---------------------Task Invoke(HttpContext context)" );
             try
             {
                 await _next(context);      //just pass on to next

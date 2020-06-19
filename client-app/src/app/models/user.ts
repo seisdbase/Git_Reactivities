@@ -1,3 +1,5 @@
+//Interfaces for user login and register, what comes back from server
+
 export interface IUser {
     username: string;
     displayName: string;

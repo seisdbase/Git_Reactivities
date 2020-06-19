@@ -1,13 +1,13 @@
+//Query handler for MedatR
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Application.Errors;
 using AutoMapper;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
-
 
 //This is Command handler for List command
 namespace Application.Activities
@@ -17,7 +17,6 @@ namespace Application.Activities
         //Query
         public class Query : IRequest<List<ActivityDto>>
         {
-
         }
 
         //Handler
@@ -35,6 +34,8 @@ namespace Application.Activities
             // All logic is contained here
             public async Task<List<ActivityDto>> Handle(Query request, CancellationToken cancellationToken)
             {
+             Console.WriteLine("IN List.cs >>>>>>>>>>Handler>>>>>>>>>>>>  Net Core" );
+
                 //Eager Loading   
                 var activities = await _context.Activities
                           .ToListAsync();

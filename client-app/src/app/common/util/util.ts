@@ -1,3 +1,4 @@
+//Helper method to combine correct date and time
 import { IActivity, IAttendee } from "../../models/activity";
 import { IUser } from "../../models/user";
 

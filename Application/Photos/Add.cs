@@ -1,3 +1,4 @@
+//Photo command handler called from the PhotosController.cs
 using System;
 using System.Linq;
 using System.Threading;

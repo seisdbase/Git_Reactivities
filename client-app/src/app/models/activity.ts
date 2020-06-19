@@ -6,11 +6,23 @@ export interface IActivity{
     date: Date;
     city: string;
     venue: string;
-    //These pertain to currently locked user
+    //These pertains to currently locked user
     isGoing: boolean;
     isHost: boolean;
-    attendees : IAttendee []
+    attendees : IAttendee [];
+    comments: IComment[];
 }
+
+//SignalR
+export interface IComment {
+    id: string;
+    createdAt: Date;
+    body: string;
+    username: string;
+    displayName: string;
+    image: string;
+}
+
 
 //Partial makes properties optional
 export interface IActivityFormValues extends Partial<IActivity> {
@@ -37,10 +49,11 @@ export class ActivityFormValues implements IActivityFormValues {
     }
 }
     export interface IAttendee {
-        username: string;
+        username: string; 
         displayName: string;
         image: string;
         isHost: boolean;
+        following?: boolean;
     }
 
     

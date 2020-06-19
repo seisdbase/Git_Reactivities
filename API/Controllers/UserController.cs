@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Application.User;
 using Microsoft.AspNetCore.Authorization;
@@ -9,9 +10,10 @@ namespace API.Controllers
     {
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login(Login.Query query)
+        public async Task<ActionResult<User>> Login(Login.Query query)  
         {
-                return await Mediator.Send(query);
+                Console.WriteLine("IN UserController.cs ...............................Net Core" );
+                return await Mediator.Send(query);  //username and password
         }
 
         [AllowAnonymous]

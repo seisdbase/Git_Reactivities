@@ -52,8 +52,7 @@ namespace Application.User
 
             }
 
-            public async Task<User> Handle(Query request,
-                                            CancellationToken cancellationToken)
+            public async Task<User> Handle(Query request, CancellationToken cancellationToken)
             {
                 var user = await _userManager.FindByEmailAsync(request.Email);
 

@@ -1,3 +1,6 @@
+//activityStore.ts
+// MobX provides the mechanism to STORE and update the application STATE that
+// React then uses.
 import {observable, action, computed, runInAction} from 'mobx';
 import { SyntheticEvent } from 'react';
 import { IActivity } from '../models/activity';
@@ -6,12 +9,19 @@ import { history } from '../..';
 import { toast } from 'react-toastify';
 import { RootStore } from './rootStore';
 import { setActivityProps, createAttendee } from '../common/util/util';
+import {HubConnection, HubConnectionBuilder, LogLevel} from '@microsoft/signalr';
 
-export default class ActivityStore {
+export default class ActivityStore { 
   rootStore: RootStore;
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
   }
+
+  // observable.map(values?) creates a dynamic keyed observable map. 
+  // Observable maps are very useful if you don't want to react just to
+  // the change of a specific entry, but also to the addition or removal of entries.
+  // Optionally takes an object, entries array or string keyed ES6 map with 
+  // initial values.
 
   @observable activityRegistry = new Map();
   @observable activity: IActivity | null = null;
@@ -19,6 +29,62 @@ export default class ActivityStore {
   @observable submitting = false;
   @observable target = "";
   @observable loading = false;
+  @observable.ref hubConnection: HubConnection | null = null ;
+
+  @action createHubConnection = (activityId: string) => {
+    this.hubConnection = new HubConnectionBuilder()
+      .withUrl('http://localhost:5000/chat', {
+        //set this to commonStore token
+        //nomrally we sent our bearer token as part of Http header but this is a new protocol
+        //and hence it will send bearer token as part of query string --> Startup.cs context.Request.Query
+        //"access_token" is the key to be sent out
+        accessTokenFactory: () => this.rootStore.commonStore.token!
+      })
+      //Get maximum info
+      .configureLogging(LogLevel.Information)
+      //Build connection
+      .build();
+
+    this.hubConnection
+      .start()
+      .then(() => console.log(this.hubConnection!.state))
+      .then(() => {
+        this.hubConnection!.invoke('AddToGroup', activityId)
+      })
+      .catch(error => console.log('Error establishing connection: ', error));
+
+    this.hubConnection.on('ReceiveComment', comment => {
+      runInAction(() => {
+        //activity.ts
+        this.activity!.comments.push(comment)
+      })
+    })
+
+    this.hubConnection.on('Send', message => {
+       toast.info(message);
+    })
+  };
+
+  @action stopHubConnection = () => {
+    this.hubConnection!.invoke('RemoveFromGroup', this.activity!.id)
+       .then(() => {
+         //Stop conn only after the remove method has completed
+        this.hubConnection!.stop()
+       })
+       .then(() => console.log('Connection stopped'))
+       .catch(err => console.log(err))
+  }
+
+  @action addComment = async (values: any) => {
+    values.activityId = this.activity!.id;  //see Create.cs
+    try {
+      //Invokation directly on the server - wt Axios
+      await this.hubConnection!.invoke('SendComment', values)  //SendComment - see ChatHub
+    } catch (error) {
+      console.log(error);
+    }
+  } 
+
 
   @computed get activitiesByDate() {
     return this.groupActivitiesByDate(
@@ -26,7 +92,7 @@ export default class ActivityStore {
     );
   }
 
-  //Group activities by date
+  //Group activities by date for the @computed above
   groupActivitiesByDate(activities: IActivity[]) {
     const sortedActivities = activities.sort(
       (a, b) => a.date.getTime() - b.date.getTime()
@@ -56,7 +122,7 @@ export default class ActivityStore {
       const activities = await agent.Activities.list();
       runInAction("loading activities", () => {
         activities.forEach((activity) => {
-          //! sign means noo way it is null
+          //! sign means no way it is null
           setActivityProps(activity, this.rootStore.userStore.user!);
           this.activityRegistry.set(activity.id, activity);
         });
@@ -122,6 +188,7 @@ export default class ActivityStore {
       let attendees = [];
       attendees.push(attendee);
       activity.attendees = attendees;
+      activity.comments=[];
       activity.isHost = true;
 
       runInAction("create activities", () => {
@@ -138,7 +205,12 @@ export default class ActivityStore {
     }
   };
 
-  //EditActivity
+  //Edit activity - update
+  //  runInAction is a simple utility that takes an code block
+  //  and executes in an (anonymous) action. This is useful 
+  //  to create and execute actions on the fly, for example 
+  //  inside an asynchronous process.
+
   @action editActivity = async (activity: IActivity) => {
     this.submitting = true;
     try {

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,18 +12,19 @@ namespace Application.User
     {
         public class Query : IRequest<User> { }
 
-        //Handler
+        //Command Handler
         public class Handler : IRequestHandler<Query, User>
         {
             private readonly UserManager<AppUser> _userManager;
             private readonly IJwtGenerator _jwtGenerator;
             private readonly IUserAccessor _userAccessor;
+
             public Handler(UserManager<AppUser> userManager, IJwtGenerator jwtGenerator,
                            IUserAccessor userAccessor)
             {
-                this._userAccessor = userAccessor;
-                this._jwtGenerator = jwtGenerator;
-                this._userManager = userManager;
+                _userAccessor = userAccessor;
+                _jwtGenerator = jwtGenerator;
+                _userManager = userManager;
             }
 
             public async Task<User> Handle(Query request,

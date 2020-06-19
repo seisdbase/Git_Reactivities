@@ -4,21 +4,29 @@ import { IActivity } from '../models/activity';
 import { history } from '../..';
 import { toast } from 'react-toastify';
 import { IUser, IUserFormValues } from '../models/user';
+import { IProfile, IPhoto } from '../models/profile';
 
 axios.defaults.baseURL= 'http://localhost:5000/api';
 
 //check JWT token exists, attach to athorization header
+//This is done for every request
+
+console.log("IN agent.ts >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> AXIOS" );
+
 axios.interceptors.request.use((config) =>  {
+    console.log("IN interceptor.request >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> AXIOS" );
     const token = window.localStorage.getItem('jwt');
     if(token) config.headers.Authorization = `Bearer ${token}`;
+   // console.log('INTERCEPTOR CONFIG: ' + JSON.stringify(config, undefined, 2));
       return config
 }, error => {
  return Promise.reject(error);
 })
 
 
-//Interceptor for request/response from server--------------------------------------
+//Interceptor for request/response from server--------------
 axios.interceptors.response.use(undefined, error => {
+      
     if(error.message === 'Network Error' && !error.response){
         toast.error('Network error - make sure API is running');
     }
@@ -29,6 +37,9 @@ axios.interceptors.response.use(undefined, error => {
    if(status === 404) {
        history.push('/not found');
    }
+   if(status === 405) {
+    toast.error('405 - method is not supported');
+}
    if(status === 400 &&  config.method === 'get' && data.errors.hasOwnProperty('id')) {
        history.push('/not found');
    }
@@ -37,9 +48,10 @@ axios.interceptors.response.use(undefined, error => {
    }
    throw error.response;
 })
-//----------------------------------------------------------------------------------
+//----------------------------------------------------------
 
 const responseBody = (response: AxiosResponse) => response.data;
+console.log("IN interceptor.responseBody >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> AXIOS" );
 
 //Slowing down function
 const sleep = (ms: number) => (response: AxiosResponse) =>
@@ -49,8 +61,15 @@ const requests = {
     get:(url: string) => axios.get(url).then(sleep(1000)).then(responseBody),
     post:(url: string, body: {}) => axios.post(url, body).then(sleep(1000)).then(responseBody),
     put:(url: string, body: {}) => axios.put(url, body).then(sleep(1000)).then(responseBody),
-    del:(url: string) => axios.delete(url).then(sleep(1000)).then(responseBody)
-}
+    del:(url: string) => axios.delete(url).then(sleep(1000)).then(responseBody),
+    postForm: (url: string, file: Blob) => {
+        let formData = new FormData();
+        formData.append('File', file);   //File needs to match property whats called in IForm file
+        return axios.post(url, formData, {
+            headers: {'Content-type': 'multipart/form-data'}
+        }).then(responseBody)
+    }
+};
 
 const Activities = {
     list: (): Promise<IActivity[]> => requests.get('activities'),
@@ -62,13 +81,29 @@ const Activities = {
     unattend: (id:string) => requests.del(`/activities/${id}/attend`) 
 }
 
+//console.log('RESPONSE BODY: ' + JSON.stringify( Activities.attend))
+
+//Axios --> login and register via interfaces in user.ts 
 const User = {
     current: (): Promise<IUser> => requests.get(`/user`),
     login: (user: IUserFormValues) :  Promise<IUser> => requests.post(`/user/login`, user),
     register: (user: IUserFormValues) :  Promise<IUser> => requests.post(`/user/register`, user),
 }
 
+//Profiles - client side
+const Profiles = {
+    get: (username: string): Promise<IProfile> => requests.get(`/profiles/${username}`),
+    put: (profile: Partial<IProfile>)  => requests.put('/profiles/', profile),
+    uploadPhoto: (photo: Blob): Promise<IPhoto> => requests.postForm(`/photos`, photo),
+    setMainPhoto: (id: string) => requests.post(`/photos/${id}/setMain`, {}),
+    deletePhoto: (id: string) => requests.del(`/photos/${id}`),
+    follow: (username: string) => requests.post(`/profiles/${username}/follow`, {}),
+    unfollow: (username: string) => requests.del(`/profiles/${username}/follow`),
+    listFollowings: (username: string, predicate: string) => requests.get(`/profiles/${username}/follow?predicate=${predicate}`)
+}
+
 export default {
     Activities,
-    User
+    User,
+    Profiles  
 }

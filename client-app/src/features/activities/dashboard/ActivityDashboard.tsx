@@ -28,7 +28,6 @@ import {  RootStoreContext } from '../../../app/stores/rootStore';
 
             <Grid.Column width={6}>
                 <h2>Activity filters...</h2>
-           
             </Grid.Column>
         </Grid>
     );

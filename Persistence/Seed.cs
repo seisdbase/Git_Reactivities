@@ -12,6 +12,7 @@ namespace Persistence
         public static async Task SeedData(DataContext context,
             UserManager<AppUser> userManager)
         {
+            //Are there any users in UserStore
             if (!userManager.Users.Any())
             {
                 var users = new List<AppUser>

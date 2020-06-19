@@ -11,13 +11,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-  
     //ControllerBase since our controller only used as an API, React is used for Views
     public class ActivitiesController : BaseController
     {
         [HttpGet]
         public async Task<ActionResult<List<ActivityDto>>> List()
         {
+            Console.WriteLine("IN ActivitiesController.cs ++++++++++++++++++++++++++++Net Core" );
             return await Mediator.Send(new List.Query());  //List.Query is the Command Handler in List.cs
         }
 
@@ -29,7 +29,7 @@ namespace API.Controllers
         }
 
         // Can use Post wt root since  "api/[controller]"
-        //If not using ApiController attribute we would need to use Create[FromBody]Create.Command command
+        //If not using api/controller attribute we would need to use Create[FromBody]Create.Command command
         [HttpPost]
         public async Task<ActionResult<Unit>> Create(Create.Command command)
         {
