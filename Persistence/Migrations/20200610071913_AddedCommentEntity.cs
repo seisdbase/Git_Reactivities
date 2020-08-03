@@ -11,7 +11,7 @@ namespace Persistence.Migrations
                 name: "Comments",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(nullable: false),
+                    Id = table.Column<Guid>(maxLength:20,nullable: false),
                     Body = table.Column<string>(nullable: true),
                     AuthorId = table.Column<string>(nullable: true),
                     ActivityId = table.Column<Guid>(nullable: true),

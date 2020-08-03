@@ -27,7 +27,6 @@ using Microsoft.AspNetCore.Http;
 using API.SignalR;
 using System.Threading.Tasks;
 using Application.Profiles;
-//using API.SignalR;
 
 namespace API
 {
@@ -41,25 +40,59 @@ namespace API
 
         public IConfiguration Configuration { get; }
 
-         //SERVICES DEPNEDENCY INJECTION CONTAINER
+        //--
+        //SqlLite for development
+        public void ConfigureDevelopmentServices(IServiceCollection services)
+        {
+            services.AddDbContext<DataContext>(opt =>
+            {
+                opt.UseLazyLoadingProxies();
+                opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
+                Console.WriteLine("IN STARTUP.CS -------------------------------DbContext for SQLite" );
+            });
+
+            ConfigureServices(services);
+        }
+
+        //MySql for production
+        public void ConfigureProductionServices(IServiceCollection services)
+        {
+            services.AddDbContext<DataContext>(opt =>
+            {
+                opt.UseLazyLoadingProxies();
+                opt.UseMySql(Configuration.GetConnectionString("DefaultConnection"));
+                Console.WriteLine("IN STARTUP.CS--------------------------------- DbContext for MySql" );
+            });
+
+            ConfigureServices(services);
+        }
+
+
+         //SERVICES DEPENEDENCY INJECTION CONTAINER
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-             Console.WriteLine("IN STARTUP.CS ConfigureServices ----------------------------------------------------" );
-            services.AddDbContext<DataContext>(opt => 
-            {
-              opt.UseLazyLoadingProxies();
-              opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
-            });
+            
+            // services.AddDbContext<DataContext>(opt =>
+            // {
+            //     opt.UseLazyLoadingProxies();
+            //     opt.UseMySql(Configuration.GetConnectionString("DefaultConnection"));
+            //     var foo = Configuration.GetConnectionString("DefaultConnection");
+            //     Console.WriteLine("IN STARTUP.CS DbContext for MySql ---->" + foo );
+            // });
 
+            
             //Service for Cross-Origin Resource Sharing
             services.AddCors(opt => 
             {
                 opt.AddPolicy("CorsPolicy", policy =>
                 {
-                    policy.AllowAnyHeader().AllowAnyMethod().WithOrigins(
-                        "http://localhost:3000"
-                    ).AllowCredentials();   //this was the fix for CORS error 
+                    policy
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .WithExposedHeaders("WWW-Authenticate")
+                          .WithOrigins("http://localhost:3000")
+                          .AllowCredentials();   //this was the fix for CORS error 
                 });
                             
             });
@@ -106,8 +139,6 @@ namespace API
                         services.AddTransient<IAuthorizationHandler, IsHostRequirementHandler>();
                         
                         //Token generator
-                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes
-                                                    (Configuration["TokenKey"]));
                         services.AddScoped<IJwtGenerator, JwtGenerator>();
 
                         //Service for retrieving username from token
@@ -122,6 +153,8 @@ namespace API
                         //Service for Cloudinary.com eg "Cloudinary:CloudName" "dp23kepfs"
                         services.Configure<CloudinarySettings>(Configuration.GetSection("Cloudinary"));
 
+                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
+
                         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                           .AddJwtBearer(opt =>
                           {
@@ -131,6 +164,8 @@ namespace API
                                   IssuerSigningKey = key,
                                   ValidateAudience = false,       //url where its coming from
                                   ValidateIssuer = false
+                                //   ValidateLifetime = true,
+                                //   ClockSkew = TimeSpan.Zero      //no 5 min leeway
                               };
 
                               //Get token for SignalR --> server side
@@ -158,7 +193,10 @@ namespace API
         {
              Console.WriteLine("IN STARTUP.CS Configure ----------------------------------------------------" );
 
-
+           //Ordering is important - error handling must be highest
+           //Refer to migration guide:
+           //https://docs.microsoft.com/cs-cz/aspnet/core/migration/22-to-30?view=aspnetcore-3.1&tabs=visual-studio
+           //see: Routing startup code
             app.UseMiddleware<ErrorHandlingMiddleware>();
 
             
@@ -166,9 +204,43 @@ namespace API
             {
                // app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                // The default HSTS value is 30 days. You may want to change 
+                //this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
+
 
             //Adds middleware to redirect from Http to Https
+            //in launchSettings.json removed from API/"applicationUrl" https://localhost:5000;
             //app.UseHttpsRedirection();
+
+            //SECURITY POLICY
+            //Middleware for security headers
+            //Prevent content sniffing
+             app.UseXContentTypeOptions();
+            //Restrict amount of info passed to other sites
+             app.UseReferrerPolicy(opt => opt.NoReferrer());
+            // //Prevent reflected x-site attacks
+            app.UseXXssProtection(opt => opt.EnabledWithBlockMode());
+            // //Prevetns IFrames and click-jacking
+            app.UseXfo(opt => opt.Deny());
+            // //Content security policy
+            app.UseCsp(opt => opt
+                    .BlockAllMixedContent()
+                    .StyleSources(s => s.Self()
+                        .CustomSources("https://fonts.googleapis.com", "sha256-F4GpCPyRepgP5znjMD8sc7PEjzet5Eef4r09dEGPpTs="))
+                    .FontSources(s => s.Self().CustomSources("https://fonts.gstatic.com", "data:"))
+                    .FormActions(s => s.Self())
+                    .FrameAncestors(s => s.Self())
+                    .ImageSources(s => s.Self().CustomSources("https://res.cloudinary.com", "blob:", "data:"))
+                    .ScriptSources(s => s.Self().CustomSources("sha256-zTmokOtDNMlBIULqs//ZgFtzokerG72Q30ccMjdGbSA="))
+            );
+
+             //This looks in wwwroot for any index.html files
+             app.UseDefaultFiles();
+             app.UseStaticFiles();
 
             //Ordering of these matters; this allows [Authorize] attribute to be used inside controllers
             //so that endpoints are protected
@@ -206,10 +278,10 @@ namespace API
 
             app.UseEndpoints(endpoints =>
             {
-                 //orig code
+                 //old 2.0 code
                 // endpoints.MapControllers();
 
-                //new code route map configuration
+                //new 3.0 code route map configuration
                 endpoints.MapControllers();
 
                 //route map I added to show Authorization setup
@@ -220,6 +292,10 @@ namespace API
 
                 //There are nowwhere  routes to redirect SignalR, must add them, SR gonna act as endpoint
                 endpoints.MapHub<ChatHub>("/chat");
+
+                //We are serving index.html from API server that knows nothing about routes in the React app
+                //For any routes it does not know about we create a 'fallback' controller
+                endpoints.MapFallbackToController("Index", "Fallback");
 
             });
         }

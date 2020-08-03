@@ -11,8 +11,8 @@ namespace Persistence.Migrations
                 name: "UserActivities",
                 columns: table => new
                 {
-                    AppUserId = table.Column<string>(nullable: false),
-                    ActivityId = table.Column<Guid>(nullable: false),
+                    AppUserId = table.Column<string>(maxLength:20, nullable: false),
+                    ActivityId = table.Column<Guid>(maxLength:20,nullable: false),
                     DateJoined = table.Column<DateTime>(nullable: false),
                     IsHost = table.Column<bool>(nullable: false)
                 },

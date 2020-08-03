@@ -5,7 +5,7 @@ using Application.Activities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+    
 //ActivitiesController is very thin and 'dumb' 
 //Passes requests to Handlers via MediatR.Send
 
@@ -15,10 +15,12 @@ namespace API.Controllers
     public class ActivitiesController : BaseController
     {
         [HttpGet]
-        public async Task<ActionResult<List<ActivityDto>>> List()
+        public async Task<ActionResult<List.ActivitiesEnvelope>> List(int? limit, int? offset,
+         bool isGoing, bool isHost, DateTime? startDate)
         {
-            Console.WriteLine("IN ActivitiesController.cs ++++++++++++++++++++++++++++Net Core" );
-            return await Mediator.Send(new List.Query());  //List.Query is the Command Handler in List.cs
+           // Console.WriteLine("IN ActivitiesController.cs ++++++++++++++++++++++++++++Net Core" );
+            return await Mediator.Send(new List.Query(limit, offset, 
+            isGoing, isHost, startDate));  //List.Query is the Command Handler in List.cs
         }
 
         [HttpGet("{id}")]

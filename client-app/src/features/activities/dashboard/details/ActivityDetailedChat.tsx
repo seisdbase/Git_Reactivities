@@ -21,7 +21,7 @@ import { formatDistance } from 'date-fns';
      return () => {
        stopHubConnection();
      }
-  }, [createHubConnection, stopHubConnection]) 
+  }, [createHubConnection, stopHubConnection, activity]) 
 
   return (
     <Fragment>

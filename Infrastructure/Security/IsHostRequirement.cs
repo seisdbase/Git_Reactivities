@@ -15,23 +15,19 @@ namespace Infrastructure.Security
 
     public class IsHostRequirementHandler : AuthorizationHandler<IsHostRequirement>
     {
-        //Get access to the user Id and activity Guid Id
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DataContext _context;
-
         public IsHostRequirementHandler(IHttpContextAccessor httpContextAccessor, DataContext context)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
         }
 
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context,
-        IsHostRequirement requirement)
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, IsHostRequirement requirement)
         {
-            if (context.Resource is AuthorizationFilterContext authContext )
+            if (context.Resource is AuthorizationFilterContext authContext)
             {
-                var currentUserName = _httpContextAccessor.HttpContext.User?.Claims?
-                .SingleOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+                var currentUserName = _httpContextAccessor.HttpContext.User?.Claims?.SingleOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
 
                 var activityId = Guid.Parse(authContext.RouteData.Values["id"].ToString());
 
@@ -39,18 +35,13 @@ namespace Infrastructure.Security
 
                 var host = activity.UserActivities.FirstOrDefault(x => x.IsHost);
 
-                //AuthorizationHandlerContext is set to succeed; if fail get 403 - forbidden
                 if (host?.AppUser?.UserName == currentUserName)
                     context.Succeed(requirement);
-            }
-            else
-            {
+            } else {
                 context.Fail();
             }
 
-            return Task.CompletedTask;    
-
+            return Task.CompletedTask;
         }
     }
-
 }

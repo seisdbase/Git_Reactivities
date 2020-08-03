@@ -5,7 +5,6 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-//using Newtonsoft.Json;
 
 namespace Infrastructure.Photos
 {
@@ -28,10 +27,6 @@ namespace Infrastructure.Photos
         {
             var uploadResult = new ImageUploadResult();
 
-            // Console.WriteLine("<<<<<<<<<<<<<<<<" + file.FileName);
-            //  string fileName = Path.GetFullPath(file.FileName);
-            //  Console.WriteLine("??????????????" + fileName);
-            
             if (file.Length > 0)
             {
                 using (var stream = file.OpenReadStream())
@@ -41,20 +36,9 @@ namespace Infrastructure.Photos
                         File = new FileDescription(file.FileName, stream),
                         Transformation = new Transformation().Height(500).Width(500).Crop("fill").Gravity("face")
                     };
-
                     uploadResult = _cloudinary.Upload(uploadParams);
                 }
             }
-
-                        //This is also possible
-                        //     var uploadParams = new ImageUploadParams()
-                        //     {
-                        //         File = new FileDescription("C://Temp//PP_Norsko.JPG")
-                        //     };
-                        // Console.WriteLine("UPLOAD PARAMS" + JsonConvert.SerializeObject(uploadParams));
-                        //    uploadResult = _cloudinary.Upload(uploadParams);
-
-            
 
             if (uploadResult.Error != null)
                 throw new Exception(uploadResult.Error.Message);
@@ -69,7 +53,9 @@ namespace Infrastructure.Photos
         public string DeletePhoto(string publicId)
         {
             var deleteParams = new DeletionParams(publicId);
+
             var result = _cloudinary.Destroy(deleteParams);
+
             return result.Result == "ok" ? result.Result : null;
         }
     }

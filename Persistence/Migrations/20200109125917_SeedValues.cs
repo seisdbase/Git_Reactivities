@@ -3,7 +3,7 @@
 namespace Persistence.Migrations
 {
     public partial class SeedValues : Migration
-    {
+        {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
 

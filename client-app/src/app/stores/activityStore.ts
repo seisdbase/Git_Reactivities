@@ -1,7 +1,7 @@
 //activityStore.ts
 // MobX provides the mechanism to STORE and update the application STATE that
 // React then uses.
-import {observable, action, computed, runInAction} from 'mobx';
+import {observable, action, computed, runInAction, reaction, toJS} from 'mobx';
 import { SyntheticEvent } from 'react';
 import { IActivity } from '../models/activity';
 import agent from '../api/agent';
@@ -11,10 +11,25 @@ import { RootStore } from './rootStore';
 import { setActivityProps, createAttendee } from '../common/util/util';
 import {HubConnection, HubConnectionBuilder, LogLevel} from '@microsoft/signalr';
 
+const LIMIT = 2;
+
 export default class ActivityStore { 
   rootStore: RootStore;
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
+
+    // --we need to react to our predicate changing, so that we load activities based
+    // --on filter that we r sending to the API
+    // --we need to use Mobx REACTION based on whether predicate keys have changed
+
+    reaction(
+      () => this.predicate.keys(),
+      () => {
+        this.page = 0;
+        this.activityRegistry.clear();
+        this.loadActivities();
+      }
+    )
   }
 
   // observable.map(values?) creates a dynamic keyed observable map. 
@@ -24,16 +39,55 @@ export default class ActivityStore {
   // initial values.
 
   @observable activityRegistry = new Map();
+
   @observable activity: IActivity | null = null;
   @observable loadingInitial = false;
   @observable submitting = false;
   @observable target = "";
   @observable loading = false;
   @observable.ref hubConnection: HubConnection | null = null ;
+  @observable activityCount = 0;
+  @observable page = 0;
+  @observable predicate = new Map();
 
+  //relates to: Agent.ts Activities: list
+  @action setPredicate =(predicate: string, value: string | Date) => {
+    this.predicate.clear();
+    if(predicate !== 'all') {
+      this.predicate.set(predicate, value);
+    }
+  }
+
+  //relates to: setPredicate
+  @computed get axiosParams() {
+    const params = new URLSearchParams();
+    //params has key/value pairs
+    params.append('limit', String(LIMIT));
+    params.append('offset', `${this.page ? this.page * LIMIT : 0 }`);
+
+    this.predicate.forEach((value, key) => {
+      if(key === 'startDate') {
+        params.append(key, value.toISOString())
+      } else {
+          params.append(key, value)
+        }
+      })
+     return params;
+  }
+
+  //Paging
+  @computed get totalPages() {
+    return Math.ceil(this.activityCount / LIMIT);
+  }
+
+  @action setPage =(page: number) => {
+    this.page = page;
+  }
+
+  //SignalR
   @action createHubConnection = (activityId: string) => {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl('http://localhost:5000/chat', {
+      .withUrl(process.env.REACT_APP_API_CHAT_URL!, {
         //set this to commonStore token
         //nomrally we sent our bearer token as part of Http header but this is a new protocol
         //and hence it will send bearer token as part of query string --> Startup.cs context.Request.Query
@@ -65,6 +119,7 @@ export default class ActivityStore {
     })
   };
 
+  //SignalR
   @action stopHubConnection = () => {
     this.hubConnection!.invoke('RemoveFromGroup', this.activity!.id)
        .then(() => {
@@ -118,14 +173,18 @@ export default class ActivityStore {
     //Get reference to the user; ! sign means no way it is null
     try {
       //Receive activities from server
-      //get it from API, remember await needs runInAction
-      const activities = await agent.Activities.list();
+      //get it from API, remember await hence ASYNC needs runInAction
+      const activitiesEnvelope = await agent.Activities.list(this.axiosParams);
+      //desctructure the above
+      const{activities, activityCount} = activitiesEnvelope;
+
       runInAction("loading activities", () => {
         activities.forEach((activity) => {
           //! sign means no way it is null
           setActivityProps(activity, this.rootStore.userStore.user!);
           this.activityRegistry.set(activity.id, activity);
         });
+        this.activityCount = activityCount;
         this.loadingInitial = false;
       });
       //Check activity arrays being passed
@@ -140,15 +199,22 @@ export default class ActivityStore {
 
   //async means gonna be returned as promise
   @action loadActivity = async (id: string) => {
+     //get it from cache memory, this is an OBSERVABLE from activity.Registry.get
+     //we get this and create in ActivityForm.tsx useState(new ActivityFormValues())
+     //then when it gets to activity.ts it will become a problem since init.time is stll an observable
+         //  if (init && init.date) {
+         //  init.time = init.date
+    //we dont want init.time be an observable but a simple JS object   
+    //hence: we use in Mobx a method to do just that by using toJS 
     let activity: any = this.getActivity(id);
-    //get it from memory
     if (activity) {
       this.activity = activity;
-      return activity;
+      return toJS(activity);
     } else {
       this.loadingInitial = true;
       try {
         //get it from API, remember await needs runInAction
+        //this is a simple JS OBJECT
         activity = await agent.Activities.details(id);
         runInAction("getting activity", () => {
           setActivityProps(activity, this.rootStore.userStore.user!);

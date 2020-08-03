@@ -2,7 +2,6 @@ import React, { useContext, useState } from 'react'
 import { Tab, Button, Header, Grid } from 'semantic-ui-react'
 import { RootStoreContext } from '../../app/stores/rootStore';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
 import ProfileEditForm from './ProfileEditForm';
 
 const ProfileDescription = () => {

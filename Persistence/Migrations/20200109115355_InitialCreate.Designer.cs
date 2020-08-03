@@ -15,6 +15,7 @@ namespace Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+            
                 .HasAnnotation("ProductVersion", "3.1.0");
 
             modelBuilder.Entity("Domain.Value", b =>

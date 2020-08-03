@@ -19,6 +19,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Value", b =>
                 {
+                    
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");

@@ -4,6 +4,7 @@ import { Router} from 'react-router-dom';
 import {createBrowserHistory} from 'history';
 import 'react-toastify/dist/ReactToastify.min.css';
 import 'react-widgets/dist/css/react-widgets.css';
+import 'semantic-ui-css/semantic.min.css'
 import './app/layout/styles.css';
 import App from './app/layout/App';
 import * as serviceWorker from './serviceWorker';
@@ -14,16 +15,19 @@ dateFnsLocalizer();
 
 export const history = createBrowserHistory();
 
+console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> IN index.tsx" );
+
  //pass history as property
  //App.tsx 
 ReactDOM.render(
     <Router history = {history}>   
         <ScrollToTop>
-            <App />                  
+            <App   />                  
         </ScrollToTop>
     </Router>,
     document.getElementById('root')
 );
+
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
