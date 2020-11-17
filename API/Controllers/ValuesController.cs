@@ -11,9 +11,10 @@ namespace DatingApp.API.Controllers
     public class ValuesController : BaseController
     {
         private readonly DataContext _context;
+        //constructor
         public ValuesController(DataContext context)
         {
-            this._context = context;
+            _context = context;
         }
 
         // GET api/values

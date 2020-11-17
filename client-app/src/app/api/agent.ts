@@ -123,8 +123,12 @@ const User = {
   login: (user: IUserFormValues): Promise<IUser> =>
     requests.post(`/user/login`, user),
   register: (user: IUserFormValues): Promise<IUser> =>
-    requests.post(`/user/register`, user)
-}
+    requests.post(`/user/register`, user),
+  //Facebook login
+  fbLogin:(accessToken: string) =>
+    requests.post(`/user/facebook`, {accessToken})
+};
+
 
 //Profiles - client side
 const Profiles = {

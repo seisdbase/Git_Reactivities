@@ -27,19 +27,17 @@ namespace Application.User
                 _userManager = userManager;
             }
 
-            public async Task<User> Handle(Query request,
-            CancellationToken cancellationToken)
+            public async Task<User> Handle(Query request, CancellationToken cancellationToken)
             {
                 var user = await _userManager.FindByNameAsync(_userAccessor.GetCurrentUsername());
 
-                return new User
-                {
-                    DisplayName = user.DisplayName,
-                    Username = user.UserName,
-                    Token = _jwtGenerator.CreateToken(user),
-                    Image =  user.Photos.FirstOrDefault(x => x.IsMain)?.Url
-                };
+                var refreshToken = _jwtGenerator.GenerateRefreshToken();
+                user.RefreshTokens.Add(refreshToken);
+                //Update via _userManager since we are storing tokens in the db; it's saved automatically
+                await _userManager.UpdateAsync(user); 
 
+                return new User(user, _jwtGenerator, refreshToken.Token);
+               
             }
         }
 }

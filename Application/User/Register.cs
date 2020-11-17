@@ -68,7 +68,7 @@ namespace Application.User
                     {
                         UserName = "Username already exists"}
                     );
-                
+
                 var user = new AppUser
                 {
                     DisplayName = request.DisplayName,
@@ -76,18 +76,17 @@ namespace Application.User
                     UserName = request.Username
                 };
 
+                var refreshToken = _jwtGenerator.GenerateRefreshToken();
+                user.RefreshTokens.Add(refreshToken);
+                //Update via _userManager since we are storing tokens in the db; it's saved automatically
+                await _userManager.UpdateAsync(user);
+
                 //Create user at last
                 var result = await _userManager.CreateAsync(user,request.Password);
 
                 if (result.Succeeded) 
                 {
-                    return new User 
-                    {
-                        DisplayName = user.DisplayName,
-                        Token = _jwtGenerator.CreateToken(user),
-                        Username = user.UserName,
-                        Image =  user.Photos.FirstOrDefault(x => x.IsMain)?.Url
-                    };
+                    return new User(user, _jwtGenerator, refreshToken.Token);
                 }
 
                 throw new Exception("Problem creating user");

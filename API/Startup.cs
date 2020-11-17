@@ -107,8 +107,8 @@ namespace API
            services.AddSignalR();
 
             
-            //services.AddMvc was replaced by AddControllers 
-            //Authoriztion policy --> every request must be authorized
+            //WebApi: services.AddMvc was replaced by AddControllers 
+            //Authorization policy --> every request must be authorized
             services.AddControllers( opt =>
                 {
                     var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
@@ -150,8 +150,14 @@ namespace API
                         //Service for injecting profile reader
                         services.AddScoped<IProfileReader, ProfileReader>();
 
+                        //Service for Facebook accessor
+                        services.AddScoped<IFacebookAccessor, FacebookAccessor>();
+
                         //Service for Cloudinary.com eg "Cloudinary:CloudName" "dp23kepfs"
                         services.Configure<CloudinarySettings>(Configuration.GetSection("Cloudinary"));
+
+                        //Facebook
+                        services.Configure<FacebookAppSettings>(Configuration.GetSection("Authentication:Facebook"));
 
                         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
 
@@ -163,9 +169,9 @@ namespace API
                                   ValidateIssuerSigningKey = true,
                                   IssuerSigningKey = key,
                                   ValidateAudience = false,       //url where its coming from
-                                  ValidateIssuer = false
-                                //   ValidateLifetime = true,
-                                //   ClockSkew = TimeSpan.Zero      //no 5 min leeway
+                                  ValidateIssuer = false,
+                                  ValidateLifetime = true,
+                                  ClockSkew = TimeSpan.Zero      //no 5 min leeway
                               };
 
                               //Get token for SignalR --> server side
@@ -189,9 +195,10 @@ namespace API
         }
 
          // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+         //Means we can add middleware to do something when sending request or receiving them 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-             Console.WriteLine("IN STARTUP.CS Configure ----------------------------------------------------" );
+             Console.WriteLine("IN STARTUP.CS --> public void Configure() --> Http request pipeline --> adding middleware to pipeline -->" );
 
            //Ordering is important - error handling must be highest
            //Refer to migration guide:
@@ -202,6 +209,7 @@ namespace API
             
             if (env.IsDevelopment())
             {
+                //This is full-page info to be displayed - not useful for user in PROD mode
                // app.UseDeveloperExceptionPage();
             }
             else
@@ -242,8 +250,9 @@ namespace API
              app.UseDefaultFiles();
              app.UseStaticFiles();
 
-            //Ordering of these matters; this allows [Authorize] attribute to be used inside controllers
-            //so that endpoints are protected
+            //Middleware for routing
+            //When request comes to API wjich needs to route it to the appropriate controlle
+            //This allows [Authorize] attribute to be used inside controllers so that endpoints are protected
             app.UseRouting();
                       
             app.UseCors("CorsPolicy"); 
@@ -272,10 +281,11 @@ namespace API
                     return next();
                 });
 
-
-            
+           
             app.UseAuthorization();
 
+
+            //Maps controtroller endpoints to API server which routes then appropriately
             app.UseEndpoints(endpoints =>
             {
                  //old 2.0 code
