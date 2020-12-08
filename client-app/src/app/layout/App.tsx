@@ -9,18 +9,17 @@ import ActivityForm from '../../features/activities/form/ActivityForm';
 import ActivityDetails from '../../features/activities/dashboard/details/ActivityDetails';
 import NotFound from './NotFound';
 import { ToastContainer } from 'react-toastify';
-import LoginForm from '../../features/user/LoginForm';
 import { RootStoreContext } from '../stores/rootStore';
 import LoadingComponent from './LoadingComponent';
 import ModalContainer from '../common/modals/ModalContainer';
 import ProfilePage from '../../features/profiles/ProfilePage';
 import PrivateRoute from './PrivateRoute';
-//import ProfileEditForm from '../../features/profiles/ProfileEditForm';
 
-console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> IN App.tsx" );
+console.log("IN App.tsx---------------------------------------starting" )
 
 //App file that usually is the main React component
 const App: React.FC<RouteComponentProps> = ({ location }) => {
+  
   //Retrieve token
   const rootStore = useContext(RootStoreContext);
   //Destructure commonStore variables
@@ -28,6 +27,7 @@ const App: React.FC<RouteComponentProps> = ({ location }) => {
   //If we have token, get user from API
   const { getUser } = rootStore.userStore;
 
+  //Replaces componenetDidMount,componenetDidUnmount,componenetDidUpdate
   useEffect(() => {
     if (token) {
       getUser().finally(() => setAppLoaded());    //Axios interceptor in agent.ts will take care of getting the token
@@ -35,7 +35,10 @@ const App: React.FC<RouteComponentProps> = ({ location }) => {
       setAppLoaded()
     }
   }, [getUser, setAppLoaded, token])
-  //dont forget the dependencies otherwise it keep re-rendering if component touches this
+  //dont forget the dependencies [] - otherwise it keep re-rendering if component touches this
+
+    console.log("IN App.tsx---------------------------------------processing" )
+  
 
   if (!appLoaded) return <LoadingComponent content='Loading app...' />
 

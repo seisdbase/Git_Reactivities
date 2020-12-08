@@ -6,10 +6,12 @@ namespace Persistence
 {
     public class DataContext :  IdentityDbContext<AppUser>
     {
+        //Contructor to get options from base (IdentityDbContext)
+        //Initializes a new instance of the Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext
+        //class.
          public DataContext(DbContextOptions options) : base(options)
          {
          }
-
          
          public DbSet<Value> Values  { get; set; }     //Table name in Sqlite
          public DbSet<Activity> Activities  {get; set; }
@@ -46,8 +48,8 @@ namespace Persistence
                 .WithMany(u => u.UserActivities)
                 .HasForeignKey(a => a.ActivityId);
 
-               builder.Entity<UserFollowing>(b =>
-            {
+            builder.Entity<UserFollowing>(b =>
+              {
                 b.HasKey(k => new { k.ObserverId, k.TargetId });
 
                 b.HasOne(o => o.Observer)
@@ -59,7 +61,7 @@ namespace Persistence
                     .WithMany(f => f.Followers)
                     .HasForeignKey(o => o.TargetId)
                     .OnDelete(DeleteBehavior.Restrict);
-            });
+              });
 
          }
     }

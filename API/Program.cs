@@ -15,7 +15,7 @@ namespace API
     {
         public static void Main(string[] args)
         {
-            System.Console.WriteLine("IN===========================================Program.cs");   
+            System.Console.WriteLine("IN PROGRAM.CS --------------------------------------------------------------");   
            
             var host = CreateHostBuilder(args).Build();
 
@@ -25,7 +25,7 @@ namespace API
 
                try
                {
-                //applies any pending migrations to the context
+                //Development - applies any pending migrations to the context
                 //    var context = services.GetRequiredService<DataContext>();
                 //    var userManager = services.GetRequiredService<UserManager<AppUser>>();
                 //    context.Database.Migrate();
@@ -45,18 +45,16 @@ namespace API
            //below: applies appsetting.json, User-secrest etc.; configures Logging
             Host.CreateDefaultBuilder(args)
                 //below: configures kestrel server
+                 
                  .ConfigureWebHostDefaults(webBuilder =>
                  {
                     //Header security - dont send server info
                      webBuilder.UseKestrel(x => x.AddServerHeader = false);
                     //Startup.cs
+                    System.Console.WriteLine("----------------------------------Kestrel configured");  
                     webBuilder.UseStartup<Startup>();
                     //     debugger;
+                     System.Console.WriteLine("----------------------------------Startup called");  
                  });
-
-        //   public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-        //     WebHost.CreateDefaultBuilder(args)
-        //         .UseStartup<Startup>();
-                 
     }
 }

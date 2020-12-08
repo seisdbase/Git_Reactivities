@@ -97,7 +97,9 @@ namespace API
                             
             });
             
-            //--MediatR is message hub; gives a reference where our handlers are located
+            //MediatR is message hub; gives a reference where our handlers are located
+            //Means Handler.List in List.cs
+            //Many lists but can use this code for all since it will find the rest in Assembly 
             services.AddMediatR(typeof(List.Handler).Assembly);
 
             //AutoMapper
@@ -251,14 +253,18 @@ namespace API
              app.UseStaticFiles();
 
             //Middleware for routing
-            //When request comes to API wjich needs to route it to the appropriate controlle
+            //When request comes to API which needs to route it to the appropriate controller
             //This allows [Authorize] attribute to be used inside controllers so that endpoints are protected
+            //Means: FIND ENDPOINT
             app.UseRouting();
                       
             app.UseCors("CorsPolicy"); 
 
             app.UseAuthentication();
-
+ 
+            //Inline middleware extension method
+            //Can call next middleware component in the pipeline
+            //Means: EXECUTE CURRENT REQUEST
             app.Use((context, next) =>
                 {
                     var endpointFeature = context.Features[typeof(IEndpointFeature)] as IEndpointFeature;
@@ -270,13 +276,14 @@ namespace API
                     {
                         var routePattern = (endpoint as RouteEndpoint)?.RoutePattern?.RawText;
                         
-                        Console.WriteLine("----------------------------------------------------" );                                             
-                        Console.WriteLine("IN STARTUP.CS app.Use ----------------------------------------------------" );
+                        Console.WriteLine("" );                                             
+                        Console.WriteLine("---------------------------------------------------------------------------------" );                                             
+                        Console.WriteLine("IN STARTUP.CS app.Use------------------------I am processing your current request" );
                         Console.WriteLine("ENDPOINT NAME: " + endpoint.DisplayName);
                         Console.WriteLine("----------------------------------------------------" );
                         Console.WriteLine($"ROUTE PATTERN: {routePattern}");
                         Console.WriteLine("----------------------------------------------------" );
-                      // Console.WriteLine("METADATA TYPES: " + string.Join(", ", endpoint.Metadata));
+                        //Console.WriteLine("METADATA TYPES: " + string.Join(", ", endpoint.Metadata));
                     }
                     return next();
                 });
@@ -285,11 +292,11 @@ namespace API
             app.UseAuthorization();
 
 
-            //Maps controtroller endpoints to API server which routes then appropriately
+            //Maps controtroller endpoints to API server which routes them appropriately
+            //Means: EXECUTE ENDPOINTS
             app.UseEndpoints(endpoints =>
             {
-                 //old 2.0 code
-                // endpoints.MapControllers();
+                Console.WriteLine($"IN STARTUP.CS --> app.UseEndpoints --> {endpoints}");
 
                 //new 3.0 code route map configuration
                 endpoints.MapControllers();

@@ -23,7 +23,7 @@ namespace DatingApp.API.Controllers
         {
             var values = await _context.Values.ToListAsync();
             return Ok(values);
-            // return new string[] { "value1", "value2" };
+            // return Ok(new string[] { "value1", "value2" });
         }
 
         // GET api/values/5
@@ -32,6 +32,7 @@ namespace DatingApp.API.Controllers
         {
             var value = await _context.Values.FindAsync(id);
             return Ok(value);
+            //   return value;
         }
 
         // POST api/values

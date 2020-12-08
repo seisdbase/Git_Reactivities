@@ -26,7 +26,7 @@ namespace Application.Activities
         public class Query : IRequest<ActivitiesEnvelope>
         {
         
-            //ctor ; this is used for paging
+            //Constractor ; this is used for paging
             public Query(int? limit, int? offset,  bool isGoing, bool isHost, DateTime? startDate) 
             {
                 Limit = limit;
@@ -51,6 +51,7 @@ namespace Application.Activities
             private readonly IMapper _mapper;
             private readonly IUserAccessor _userAccessor;
 
+            //Constructor
             public Handler(DataContext context, IMapper mapper,IUserAccessor userAccessor)
             {
                 _userAccessor = userAccessor;
@@ -58,7 +59,7 @@ namespace Application.Activities
                 _context = context;
             }
 
-            // All logic is contained here
+            // Activities - all logic is contained here
             public async Task<ActivitiesEnvelope> Handle(Query request, CancellationToken cancellationToken)
             {
                 var queryable = _context.Activities
@@ -87,6 +88,8 @@ namespace Application.Activities
                     Activities = _mapper.Map<List<Activity>, List<ActivityDto>>(activities),
                     ActivityCount = queryable.Count()
                 };
+
+                //Original code module 4
                //  Console.WriteLine("IN List.cs >>>>>>>>>>Handler>>>>>>>>>>>>  Net Core" );
                 //Eager Loading   
                 // var activities = await _context.Activities.ToListAsync();

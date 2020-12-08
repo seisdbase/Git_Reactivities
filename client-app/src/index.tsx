@@ -15,7 +15,7 @@ dateFnsLocalizer();
 
 export const history = createBrowserHistory();
 
-console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> IN index.tsx" );
+console.log("IN index.tsx-------------------------------------starting" );
 
  //pass history as property
  //App.tsx 
@@ -25,7 +25,7 @@ ReactDOM.render(
             <App   />                  
         </ScrollToTop>
     </Router>,
-    document.getElementById('root')
+    document.getElementById('root')      //This calls Index.html <div id="root">
 );
 
 

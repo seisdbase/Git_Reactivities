@@ -20,7 +20,7 @@ namespace API.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-             Console.WriteLine("IN ErrorHandlingMiddleware.cs ---------------------Task Invoke(HttpContext context)" );
+            Console.WriteLine("IN ErrorHandlingMiddleware.cs ---------------------Task Invoke(HttpContext context)" );
             try
             {
                 await _next(context);      //just pass on to next
@@ -28,6 +28,7 @@ namespace API.Middleware
             catch (Exception ex)
             {
                 //out special error handling
+                // Console.WriteLine("Error: " + ex.Message);
                 await HandleExceptionAsync (context, ex, _logger);
             }
         }
@@ -42,10 +43,12 @@ namespace API.Middleware
                 case RestException re:
                    logger.LogError(ex, "REST ERROR");
                    errors = re.Errors;
+                   //  Console.WriteLine("Error: " + ex.Message);
                    context.Response.StatusCode = (int) re.Code;
                    break;
                 case Exception e:
                     logger.LogError(ex, "SERVER ERROR");
+                    //  Console.WriteLine("Error: " + ex.Message);
                     errors = string.IsNullOrWhiteSpace(e.Message) ? "Error" : e.Message;
                     context.Response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
                     break;
@@ -58,7 +61,8 @@ namespace API.Middleware
                     {
                         errors
                     });
-                    await context.Response.WriteAsync(result);
+                      // Console.WriteLine("Error: " + ex.Message);
+                await context.Response.WriteAsync(result);
             }
 
         }

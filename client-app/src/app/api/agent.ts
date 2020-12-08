@@ -38,7 +38,7 @@ axios.interceptors.response.use(undefined, error => {
 
   //Destructure elements from the Response object = transltes to: call error.response
   //and receive status,data, config
-  const { status, data, config, headers } = error.response
+  const { status, data, config } = error.response
 
   if (status === 404) {
     history.push('/not found')

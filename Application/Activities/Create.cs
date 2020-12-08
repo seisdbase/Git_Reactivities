@@ -80,9 +80,12 @@ namespace Application.Activities
 
             _context.UserActivities.Add(attendee);
 
+            //This task for SaveChangesAsync returns number of changes
             var success = await _context.SaveChangesAsync() > 0;
 
             if (success) return Unit.Value;
+            
+            //Failure
             throw new Exception("Problem saving changes");
         }
     }
